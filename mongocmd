@@ -1,0 +1,9 @@
+show tables
+people
+
+db.people.find();
+{ "_id" : ObjectId("5a98d4d01b878f68314ed287"), "name" : "Ale", "phone" : "+55 53 8116 9639" }
+{ "_id" : ObjectId("5a98d4d01b878f68314ed288"), "name" : "Cla", "phone" : "+55 53 8402 8510" } } }
+
+db.people.find({ "name" : "Ale" });
+{ "_id" : ObjectId("5a98d4d01b878f68314ed287"), "name" : "Ale", "phone" : "+55 53 8116 9639" } } })
