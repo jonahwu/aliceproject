@@ -138,9 +138,10 @@ func main() {
 	})
 
 	//curl  -H "TEST:B"  http://localhost:8080/image -vi
+	//where destFile stored in header and can be a hint name for client, here we use "default"
 	app.Get("/image", middleware, func(ctx iris.Context) {
 		file := "/go/src/github.com/aliciproject/mongocmd"
-		ctx.SendFile(file, "c.txt")
+		ctx.SendFile(file, "default")
 	})
 	// Start the server using a network address.
 	app.Run(iris.Addr("0.0.0.0:8080"))
