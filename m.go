@@ -26,10 +26,20 @@ type Person struct {
 	ID    string
 }
 type User struct {
-	Username  string
-	Firstname string
-	Lastname  string
-	City      string
+	Username   string `json:"username" bson:"username"`
+	City       string `json:"city" bson:"city"`
+	ID         string `json:"id" bson:"id"`
+	Status     string `json:"status" bson:"status"`
+	ClientTime string `json:"clienttime" bson:"clienttime"`
+	Timestamp  string `json:"timestamp" bson:"timestamp"`
+}
+type TransID struct {
+	ID string `json:"id" bson:"id"`
+}
+
+type ImageInfo struct {
+	Name string `json:"name" bson:"name"`
+	ID   string `json:"id" bson:"id"`
 }
 
 //curl -H "TEST:B" http://localhost:8080/test/2X3190
@@ -61,6 +71,7 @@ func main() {
 	session.SetMode(mgo.Monotonic, true)
 
 	c1 := session.DB("test").C("people")
+	cimage := session.DB("test").C("image")
 	//c2 := session.DB("test").C("history")
 
 	app := iris.New()
@@ -77,6 +88,33 @@ func main() {
 		// Render template file: ./views/hello.html
 		ctx.View("hello.html")
 	})
+	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
+	app.Get("/transid", func(ctx iris.Context) {
+		// Bind: {{.message}} with "Hello world!"
+
+		transid, err := GetTransID(c1)
+		if err != nil {
+			fmt.Println("get tranlation id:", transid)
+		}
+		//it's ok
+		var tid TransID
+		tid.ID = transid
+		//it's ok
+		/*
+			tid := make(map[string]interface{})
+			tid["ID"] = transid
+		*/
+		//it's ok
+		/*
+			tid := TransID{
+				Id: "Johndoe",
+			}
+		*/
+		fmt.Println(tid)
+		ctx.Header("TEST", "RETURN")
+		ctx.JSON(tid)
+		//ctx.Writef("User ID: %s", tid)
+	})
 
 	app.Get("/user/{id:long}", func(ctx iris.Context) {
 		userID, _ := ctx.Params().GetInt64("id")
@@ -84,21 +122,24 @@ func main() {
 	})
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
-	app.Post("/test/{id}", middleware, func(ctx iris.Context) {
+	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"cc","City":"ddd"}' http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	app.Post("/userinfo/{id}", middleware, func(ctx iris.Context) {
 		//id, _ := ctx.Params().Get("id")
-		id := ctx.Params().Get("id")
-		fmt.Println(id)
-
-		var userRead User
-		ctx.ReadJSON(&userRead)
-		fmt.Println(userRead)
-		fmt.Println("where the input user name is", userRead.Username)
-
+		DBInsertUserInfo(c1, ctx)
 		ctx.Header("TEST", "RETURN")
 		ctx.Writef("User ID:data")
 	})
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/test/2X3190 -v
+	//curl -X PUT -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	app.Put("/userinfo/{id}", middleware, func(ctx iris.Context) {
+		if _, err := DBUserInfoStatusDone(c1, ctx); err != nil {
+			fmt.Println(err)
+			ctx.Writef("some error")
+		}
+		ctx.Writef("ok")
+	})
+
 	app.Get("/test/{id}", middleware, func(ctx iris.Context) {
 		//id, _ := ctx.Params().Get("id")
 		id := ctx.Params().Get("id")
@@ -111,10 +152,8 @@ func main() {
 		ret := MongoController(c1, id)
 		fmt.Println(ret)
 		doe := User{
-			Username:  "Johndoe",
-			Firstname: "John",
-			Lastname:  "Doe",
-			City:      "Neither FBI knows!!!",
+			Username: "Johndoe",
+			City:     "Neither FBI knows!!!",
 		}
 
 		//it's a Header reuturn
@@ -122,14 +161,25 @@ func main() {
 		//it's a StatusCode return
 		//ctx.StatusCode(iris.StatusInternalServerError)
 		//it's a json return
+		fmt.Println(doe)
+		/*
+			var tt map[string]interface{}
+			tt["tt"] = "aaaa"
+		*/
 		ctx.JSON(doe)
+		//ctx.JSON(iris.StatusOK, tt)
 		//it's a body return
 		//ctx.Writef("User ID: %s", ret)
 	})
 	//curl -X POST -F 'img_avatar=@/go/src/github.com/aliciproject/mongocmd'  -H "TEST:B"  http://localhost:8080/image -vi
-	app.Post("/image", middleware, func(ctx iris.Context) {
+	app.Post("/image/{id}", middleware, func(ctx iris.Context) {
 		// it will keep the filename mongocmd so the dest is just a directory that we must create by myself
-		dest := "/go/src/github.com/aliciproject/mongocmdcopy"
+		urlPath := ctx.Params().Get("id")
+		fmt.Println("show the path:", urlPath)
+		dest := "/opt/data/aliceproject/image/" + urlPath
+		cmdStr := "mkdir -p " + dest
+		_ = RunCommand(cmdStr)
+		fmt.Println("show dest:", dest)
 		n, err := ctx.UploadFormFiles(dest)
 		fmt.Println("show read file number", n)
 		fmt.Println("show error", err)
@@ -137,10 +187,25 @@ func main() {
 
 	})
 
+	//curl -X POST  -H "TEST:B" -H "IMG:mongocmd"  http://localhost:8080/imageinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	app.Post("/imageinfo/{id}", middleware, func(ctx iris.Context) {
+		_, err := DBInsertImage(cimage, ctx)
+		if err != nil {
+			ctx.Writef("error")
+		}
+		ctx.Writef("ok")
+	})
+
 	//curl  -H "TEST:B"  http://localhost:8080/image -vi
 	//where destFile stored in header and can be a hint name for client, here we use "default"
-	app.Get("/image", middleware, func(ctx iris.Context) {
-		file := "/go/src/github.com/aliciproject/mongocmd"
+	//curl  -H "TEST:B"  http://localhost:8080/image/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	//curl  -H "TEST:B" -H "IMG:mongocmd"  http://localhost:8080/image/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	app.Get("/image/{id}", middleware, func(ctx iris.Context) {
+		urlPath := ctx.Params().Get("id")
+		imgName := ctx.GetHeader("IMG")
+		dest := "/opt/data/aliceproject/image/" + urlPath
+		file := dest + "/" + imgName
+		fmt.Println("get file: ", file)
 		ctx.SendFile(file, "default")
 	})
 	// Start the server using a network address.
