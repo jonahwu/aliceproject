@@ -119,14 +119,18 @@ func main() {
 		//ctx.Writef("User ID: %s", tid)
 	})
 
+	app.Get("/user/{id:long}", func(ctx iris.Context) {
+		userID, _ := ctx.Params().GetInt64("id")
+		ctx.Writef("User ID: %d", userID)
+	})
+
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
 	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"cc","City":"ddd"}' http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
 	app.Post("/userinfo/{id}", middleware, func(ctx iris.Context) {
 		//id, _ := ctx.Params().Get("id")
 		DBInsertUserInfo(c1, ctx)
 		ctx.Header("TEST", "RETURN")
-		//ctx.Writef("User ID:data")
-		ctx.StatusCode(iris.StatusOK)
+		ctx.Writef("User ID:data")
 	})
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/test/2X3190 -v
