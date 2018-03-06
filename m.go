@@ -154,8 +154,7 @@ func main() {
 		fmt.Println(userRead)
 
 		//ret := MongoController(c1, id)
-		idd := "id"
-		ret, _ := DBGetField(c1, ctx, idd)
+		ret, _ := DBGetUserInfo(c1, ctx)
 		fmt.Println(ret)
 
 		//it's a Header reuturn
