@@ -61,3 +61,33 @@ func DBInsertUserInfo(c *mgo.Collection, ctx iris.Context) (string, error) {
 	}
 	return id, nil
 }
+
+func DBGetField(c *mgo.Collection, ctx iris.Context, idd string) (User, error) {
+	id := ctx.Params().Get(idd)
+	result := User{}
+	err := c.Find(bson.M{"id": id}).One(&result)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return result, nil
+
+}
+func DBMoveUserInfo(c *mgo.Collection, cH *mgo.Collection, ctx iris.Context) (User, error) {
+
+	//res, _ := DBGetField(c, ctx, "id")
+	result := User{}
+	id := ctx.Params().Get("id")
+	if err := c.Find(bson.M{"id": id}).One(&result); err != nil {
+		fmt.Println(err)
+	}
+
+	if err := c.Remove(bson.M{"id": id}); err != nil {
+		fmt.Println(err)
+	}
+
+	if err := cH.Insert(&result); err != nil {
+		fmt.Println(err)
+		return User{}, err
+	}
+	return result, nil
+}

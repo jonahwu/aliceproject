@@ -72,6 +72,7 @@ func main() {
 
 	c1 := session.DB("test").C("people")
 	cimage := session.DB("test").C("image")
+	chistory := session.DB("test").C("history")
 	//c2 := session.DB("test").C("history")
 
 	app := iris.New()
@@ -121,6 +122,7 @@ func main() {
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
 	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"cc","City":"ddd"}' http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"山小","City":"ddd"}' http://localhost:8080/userinfo/59036923-79fc-4fc2-8b4d-3e39a6b7624a -v
 	app.Post("/userinfo/{id}", middleware, func(ctx iris.Context) {
 		//id, _ := ctx.Params().Get("id")
 		DBInsertUserInfo(c1, ctx)
@@ -131,15 +133,18 @@ func main() {
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/test/2X3190 -v
 	//curl -X PUT -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
+	//curl -X PUT -H "Content-Type: application/json" -H "TEST:B" -d @a.json http://localhost:8080/userinfo/59036923-79fc-4fc2-8b4d-3e39a6b7624a
 	app.Put("/userinfo/{id}", middleware, func(ctx iris.Context) {
 		if _, err := DBUserInfoStatusDone(c1, ctx); err != nil {
 			fmt.Println(err)
 			ctx.Writef("some error")
+			ctx.StatusCode(iris.StatusExpectationFailed)
 		}
-		ctx.Writef("ok")
+		ctx.StatusCode(iris.StatusOK)
+		//ctx.Writef("ok")
 	})
 
-	app.Get("/test/{id}", middleware, func(ctx iris.Context) {
+	app.Get("/userinfo/{id}", middleware, func(ctx iris.Context) {
 		//id, _ := ctx.Params().Get("id")
 		id := ctx.Params().Get("id")
 		fmt.Println(id)
@@ -148,27 +153,31 @@ func main() {
 		ctx.ReadJSON(&userRead)
 		fmt.Println(userRead)
 
-		ret := MongoController(c1, id)
+		//ret := MongoController(c1, id)
+		idd := "id"
+		ret, _ := DBGetField(c1, ctx, idd)
 		fmt.Println(ret)
-		doe := User{
-			Username: "Johndoe",
-			City:     "Neither FBI knows!!!",
-		}
 
 		//it's a Header reuturn
 		ctx.Header("TEST", "RETURN")
 		//it's a StatusCode return
 		//ctx.StatusCode(iris.StatusInternalServerError)
 		//it's a json return
-		fmt.Println(doe)
+		//fmt.Println(doe)
 		/*
 			var tt map[string]interface{}
 			tt["tt"] = "aaaa"
 		*/
-		ctx.JSON(doe)
+		//ctx.JSON(doe)
 		//ctx.JSON(iris.StatusOK, tt)
 		//it's a body return
-		//ctx.Writef("User ID: %s", ret)
+		ctx.JSON(ret)
+		//ctx.Writef(ret)
+
+	})
+	app.Delete("/userinfo/{id}", middleware, func(ctx iris.Context) {
+		DBMoveUserInfo(c1, chistory, ctx)
+
 	})
 	//curl -X POST -F 'img_avatar=@/go/src/github.com/aliciproject/mongocmd'  -H "TEST:B"  http://localhost:8080/image -vi
 	app.Post("/image/{id}", middleware, func(ctx iris.Context) {
