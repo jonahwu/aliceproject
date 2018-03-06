@@ -93,3 +93,43 @@ func DBMoveUserInfo(c *mgo.Collection, cH *mgo.Collection, ctx iris.Context) (Us
 	}
 	return result, nil
 }
+
+/*
+func DBGetHistory(cH *mgo.Collection, ctx iris.Context) (User, error) {
+	result := User{}
+	if err := cH.Find(nil).One(&result); err != nil {
+		fmt.Println(err)
+		return User{}, err
+	}
+	return result, nil
+
+}
+*/
+/*
+func DBGetHistory(cH *mgo.Collection, ctx iris.Context) ([]User, error) {
+	result := []User{}
+	//result := History{}
+	if err := cH.Find(nil).All(&result); err != nil {
+		fmt.Println(err)
+		return []User{}, err
+	}
+	fmt.Println("in History:", result)
+	return result, nil
+
+}
+*/
+
+func DBGetHistory(cH *mgo.Collection, ctx iris.Context) (History, error) {
+	//var history History
+	history := History{}
+	result := []User{}
+	//result := History{}
+	if err := cH.Find(nil).All(&result); err != nil {
+		fmt.Println(err)
+		return History{}, err
+	}
+	fmt.Println("in History:", result)
+	history.Users = result
+	return history, nil
+
+}

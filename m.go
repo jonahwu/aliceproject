@@ -33,6 +33,9 @@ type User struct {
 	ClientTime string `json:"clienttime" bson:"clienttime"`
 	Timestamp  string `json:"timestamp" bson:"timestamp"`
 }
+type History struct {
+	Users []User `json:"users" bson:"users"`
+}
 type TransID struct {
 	ID string `json:"id" bson:"id"`
 }
@@ -214,6 +217,11 @@ func main() {
 		file := dest + "/" + imgName
 		fmt.Println("get file: ", file)
 		ctx.SendFile(file, "default")
+	})
+	//curl  -H "Content-Type: application/json" -H "TEST:B"  http://localhost:8080/history
+	app.Get("/history", middleware, func(ctx iris.Context) {
+		ret, _ := DBGetHistory(chistory, ctx)
+		ctx.JSON(ret)
 	})
 	// Start the server using a network address.
 	app.Run(iris.Addr("0.0.0.0:8080"))
