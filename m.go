@@ -12,19 +12,6 @@ func TestController(t int) string {
 	return "haha"
 }
 
-//func MongoController(c *mgo.Database) string {
-func MongoController(c *mgo.Collection, id string) string {
-	err := c.Insert(&Person{"New", "+55 53 8116 9639", id},
-		&Person{"nla", "+55 53 8402 8510", id})
-	fmt.Println(err)
-	return "yes"
-}
-
-type Person struct {
-	Name  string
-	Phone string
-	ID    string
-}
 type User struct {
 	Username   string `json:"username" bson:"username"`
 	City       string `json:"city" bson:"city"`
@@ -119,18 +106,14 @@ func main() {
 		ctx.Header("TEST", "RETURN")
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(tid)
-		//ctx.StatusCode(iris.StatusInternalServerError)
-		//ctx.Writef("User ID: %s", tid)
 	})
 
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
 	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"cc","City":"ddd"}' http://localhost:8080/userinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
 	//curl -X POST -H "Content-Type: application/json" -H "TEST:B" -d '{"Username":"山小","City":"ddd"}' http://localhost:8080/userinfo/59036923-79fc-4fc2-8b4d-3e39a6b7624a -v
 	app.Post("/userinfo/{id}", middleware, func(ctx iris.Context) {
-		//id, _ := ctx.Params().Get("id")
 		DBInsertUserInfo(c1, ctx)
 		ctx.Header("TEST", "RETURN")
-		//ctx.Writef("User ID:data")
 		ctx.StatusCode(iris.StatusOK)
 	})
 
@@ -144,7 +127,6 @@ func main() {
 			ctx.StatusCode(iris.StatusExpectationFailed)
 		}
 		ctx.StatusCode(iris.StatusOK)
-		//ctx.Writef("ok")
 	})
 
 	app.Get("/userinfo/{id}", middleware, func(ctx iris.Context) {
@@ -162,19 +144,7 @@ func main() {
 
 		//it's a Header reuturn
 		ctx.Header("TEST", "RETURN")
-		//it's a StatusCode return
-		//ctx.StatusCode(iris.StatusInternalServerError)
-		//it's a json return
-		//fmt.Println(doe)
-		/*
-			var tt map[string]interface{}
-			tt["tt"] = "aaaa"
-		*/
-		//ctx.JSON(doe)
-		//ctx.JSON(iris.StatusOK, tt)
-		//it's a body return
 		ctx.JSON(ret)
-		//ctx.Writef(ret)
 
 	})
 	app.Delete("/userinfo/{id}", middleware, func(ctx iris.Context) {
@@ -196,7 +166,7 @@ func main() {
 		//ctx.Header("Content-Type", "multipart/form-data")
 
 	})
-
+	// this post can be change to put in image
 	//curl -X POST  -H "TEST:B" -H "IMG:mongocmd"  http://localhost:8080/imageinfo/e6afa881-ab96-46cc-a2bf-83bde68f010f -v
 	app.Post("/imageinfo/{id}", middleware, func(ctx iris.Context) {
 		_, err := DBInsertImage(cimage, ctx)
@@ -218,6 +188,7 @@ func main() {
 		fmt.Println("get file: ", file)
 		ctx.SendFile(file, "default")
 	})
+
 	//curl  -H "Content-Type: application/json" -H "TEST:B"  http://localhost:8080/history
 	app.Get("/history", middleware, func(ctx iris.Context) {
 		ret, _ := DBGetHistory(chistory, ctx)
