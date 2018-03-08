@@ -79,6 +79,20 @@ func main() {
 		// Render template file: ./views/hello.html
 		ctx.View("hello.html")
 	})
+	app.Get("/hello", func(ctx iris.Context) {
+		fmt.Println("get hello test")
+		ctx.Writef("world")
+	})
+	app.Post("/hello", func(ctx iris.Context) {
+		fmt.Println("post hello test")
+		var userRead User
+		ctx.ReadJSON(&userRead)
+		fmt.Println(userRead)
+		fmt.Println("where the address", userRead.City)
+		fmt.Println("where the username", userRead.Username)
+		fmt.Println("where the clienttime", userRead.ClientTime)
+		ctx.Writef("post world")
+	})
 	//curl -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/test/2X3190 -v
 	//curl -X GET -H "Content-Type: application/json" -H "TEST:B" -d '{"Firstname":"aaa", "Lastname":"bbb", "Username":"ccc","City":"ddd"}' http://localhost:8080/getid -v
 	app.Get("/getid", func(ctx iris.Context) {
